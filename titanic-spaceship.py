@@ -9,7 +9,7 @@ from sklearn.preprocessing import OneHotEncoder
 from collections import defaultdict
 
 # Read the data
-df_train = pd.read_csv('df_train_preprocessed.csv')
+df_train = pd.read_csv('../df_train_preprocessed.csv')
 df_transported = df_train[['Transported']]
 
 # Encoding the whole dataframe
@@ -22,10 +22,10 @@ X = df_train.loc[:, var_columns]
 y = df_train.loc[:, 'Transported']
 
 # Split the test size
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
 
 # Create xgboost model by using different parameters (just trying for now)
-model_xgboost = xgboost.XGBClassifier(learning_rate=0.05,
+model_xgboost = xgboost.XGBClassifier(learning_rate=0.25,
                                       max_depth=3,
                                       n_estimators=5000,
                                       subsample=0.5,
@@ -39,9 +39,9 @@ eval_set = [(X_test, y_test)]
 model_xgboost.fit(X_train, y_train, eval_set=eval_set, verbose=True)
 
 y_train_pred = model_xgboost.predict_proba(X_train)[:,1]
-y_valid_pred = model_xgboost.predict_proba(X_valid)[:,1]
+y_test_pred = model_xgboost.predict_proba(X_test)[:,1]
 
-model_xgboost.save_model('XGB_titanic_spaceship_first_try.json')
+model_xgboost.save_model('XGB_titanic_spaceship_second_try.json')
 
-print("AUC Train: {:.4f}\nAUC Valid: {:.4f}".format(roc_auc_score(y_train, y_train_pred),
-                                                    roc_auc_score(y_valid, y_valid_pred)))
+print("AUC Train: {:.4f}\nAUC Test: {:.4f}".format(roc_auc_score(y_train, y_train_pred),
+                                                    roc_auc_score(y_train, y_train_pred)))
