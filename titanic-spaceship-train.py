@@ -9,12 +9,10 @@ from sklearn.preprocessing import OneHotEncoder
 from collections import defaultdict
 from joblib import dump, load
 
-
 # Read the data
-df_train = pd.read_csv('../df_train_preprocessed.csv')
-df_transported = df_train[['Transported']]
+df_train = pd.read_pickle('df_train_preprocess.pkl')
 
-# Encoding the whole dataframe
+# Encoding the whole dataframe because we will use classifier
 d = defaultdict(LabelEncoder)
 df_train = df_train.apply(lambda x: d[x.name].fit_transform(x))
 
@@ -24,36 +22,27 @@ X = df_train.loc[:, var_columns]
 y = df_train.loc[:, 'Transported']
 
 # Split the test size
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 # Create xgboost model by using different parameters
-model_xgboost = xgboost.XGBClassifier(learning_rate=0.05,
+# You can get these parameters from hyperparameter_tuning script
+model_xgboost = xgboost.XGBClassifier(learning_rate=0.075,
                                       max_depth=7,
                                       min_child_weight =5,
                                       objective = 'binary:logistic',
-                                      # n_estimators=300,
-                                      subsample=0.5,
-                                      colsample_bytree=0.3,
-                                      # gamma = 0.1,
+                                      n_estimators=400,
+                                      subsample=0.4,
+                                      colsample_bytree=0.6,
+                                      gamma = 0.1,
                                       eval_metric='auc',
                                       booster='gbtree',
                                       verbosity=1
                                       )
-
-# This is another method I found online with hyperparameter optimization I got these values
-# model_xgboost = xgboost.XGBClassifier(n_estimators=  179,
-#                                         min_samples_split= 10,
-#                                         min_samples_leaf= 1,
-#                                         max_features= 5,
-#                                         max_depth= 26,
-#                                         )
-
 
 # Evaluation set which will be used to test
 eval_set = [(X_test, y_test)]
 # Fit the xgboost
 model_xgboost.fit(X_train, y_train, eval_set=eval_set, verbose=True)
 
-y_train_pred = model_xgboost.predict_proba(X_train)[:,1]
-y_test_pred = model_xgboost.predict_proba(X_test)[:,1]
-dump(model_xgboost, '11.joblib')
+# Save the model
+dump(model_xgboost, 'xgboost_model.joblib')
